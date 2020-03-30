@@ -11,8 +11,10 @@ import com.google.android.exoplayer2.ui.PlayerView;
 
 public class MainActivity extends AppCompatActivity {
 
-//    PlayerView playerView;
-    ExoPlayerView playerView;
+    boolean isNeedRestart = false;
+
+    CExoPlayerView playerView;
+    ExoPlayerHelp playerHelp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +23,19 @@ public class MainActivity extends AppCompatActivity {
 //        http://hjh-ys.wanbawanba.com/JYGY/task/yZweX7EBAdTZpBYcCPSHKynBsnkHrc45.mp4
 //        http://211.73.19.201/live/E6290DC0-BE6A-B7C4-79F5-114BDB417F9E?fmt=x264_500K_ts&cpid=admin&size=1280X720&toflv=15
         playerView = findViewById(R.id.player);
+        playerView.setShowController(false);
+        playerView.setPlayerStateListener(new ExoPlayerHelp.IPlayerStateListener() {
+            @Override
+            public void onFinish() {
+                playerHelp.player("http://pub.wanbawanba.com/22f1c63612634fc495ae167d073f5e8e.mp4");
+                playerHelp.start();
+            }
+
+            @Override
+            public void onError() {
+
+            }
+        });
 //        playerView.setUseController(false);
 //        PlayerHelp.getInstance().initPlayer(this, playerView, "http://hjh-ys.wanbawanba.com/JYGY/task/yZweX7EBAdTZpBYcCPSHKynBsnkHrc45.mp4", new PlayerHelp.IPlayerStateListener() {
 //            @Override
@@ -33,28 +48,22 @@ public class MainActivity extends AppCompatActivity {
 //
 //            }
 //        });
-        PlayerHelp.getInstance().initPlayer(this, playerView, "http://hjh-ys.wanbawanba.com/JYGY/task/yZweX7EBAdTZpBYcCPSHKynBsnkHrc45.mp4", new PlayerHelp.IPlayerStateListener() {
-            @Override
-            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+        playerHelp = new ExoPlayerHelp(this);
 
-            }
-
-            @Override
-            public void onError() {
-
-            }
-        });
+        playerHelp.setPlayerView(playerView);
+        playerHelp.player("http://hjh-ys.wanbawanba.com/JYGY/task/yZweX7EBAdTZpBYcCPSHKynBsnkHrc45.mp4");
+        playerHelp.start();
 
         findViewById(R.id.tv_play).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PlayerHelp.getInstance().start();
+                playerHelp.start();
             }
         });
         findViewById(R.id.tv_stop).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PlayerHelp.getInstance().stop();
+                playerHelp.stop();
             }
         });
         findViewById(R.id.tv_jump).setOnClickListener(new View.OnClickListener() {
@@ -75,15 +84,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-//        PlayerHelp.getInstance().start();
-        PlayerHelp.getInstance().reset();
-
+        if (isNeedRestart) {
+            playerHelp.restart(playerView);
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        PlayerHelp.getInstance().pause();
+        isNeedRestart = true;
+        playerHelp.pause();
     }
 
 }

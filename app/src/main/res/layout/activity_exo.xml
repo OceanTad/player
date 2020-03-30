@@ -6,11 +6,11 @@
     android:layout_height="match_parent"
     tools:context=".ExoActivity">
 
-    <com.hxrainbow.myapplication.ExoPlayerView
+    <com.hxrainbow.myapplication.CExoPlayerView
         android:id="@+id/playerView"
-        android:layout_centerInParent="true"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -36,5 +36,12 @@
             android:textColor="#ff0" />
 
     </LinearLayout>
+
+    <include
+        android:id="@+id/controller"
+        layout="@layout/view_player_controller"
+        android:layout_width="match_parent"
+        android:layout_height="100px"
+        android:layout_alignParentBottom="true" />
 
 </RelativeLayout>

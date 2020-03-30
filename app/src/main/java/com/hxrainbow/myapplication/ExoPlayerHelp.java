@@ -7,14 +7,11 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.view.TextureView;
-import android.view.View;
 
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SeekParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
@@ -28,75 +25,50 @@ import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
-import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
+import com.google.android.exoplayer2.upstream.cache.Cache;
+import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory;
+import com.google.android.exoplayer2.upstream.cache.CacheEvictor;
+import com.google.android.exoplayer2.upstream.cache.CacheSpan;
+import com.google.android.exoplayer2.upstream.cache.CachedRegionTracker;
+import com.google.android.exoplayer2.upstream.cache.SimpleCache;
 import com.google.android.exoplayer2.util.Util;
 
-public class PlayerHelp {
+import java.io.File;
+
+
+public class ExoPlayerHelp {
 
     private static final String TAG = "player";
 
-    private static volatile PlayerHelp instance;
-
-    private PlayerHelp() {
-
-    }
-
-    public static PlayerHelp getInstance() {
-        if (instance == null) {
-            synchronized (PlayerHelp.class) {
-                if (instance == null) {
-                    instance = new PlayerHelp();
-                }
-            }
-        }
-        return instance;
-    }
-
+    private Context context;
     private SimpleExoPlayer player;
     private DefaultDataSourceFactory dataSourceFactory;
     private Handler mainHandler;
-    private IPlayerStateListener stateListener;
 
-    ExoPlayerView playerView;
-    String path;
-    long position;
-
-    public void initPlayer(Context context, PlayerView playerView, String url, IPlayerStateListener stateListener) {
-        this.stateListener = stateListener;
+    public ExoPlayerHelp(Context context){
+        this.context = context;
         if (player == null) {
-            createPlayer(context);
+            createPlayer();
         }
-        playerView.setPlayer(player);
+    }
+
+    public void setPlayerView(CExoPlayerView playerView) {
+        playerView.createPlayerView(player);
+    }
+
+    public void player(String url) {
+        this.url = url;
         player.prepare(buildMediaSource(url));
     }
 
     public void start() {
-        if (player != null) {
-            if (player.getPlaybackState() == Player.STATE_ENDED) {
-                player.setPlayWhenReady(false);
-                player.seekTo(0);
-                player.setPlayWhenReady(true);
-            } else if (!player.getPlayWhenReady()) {
-                player.setPlayWhenReady(true);
-            }
+        if (player != null && !player.getPlayWhenReady()) {
+            player.setPlayWhenReady(true);
         }
-    }
-
-    public void reset() {
-        if (player != null) {
-            player.prepare(buildMediaSource(path));
-            player.seekTo(position);
-        }
-    }
-
-    public void pause() {
-        player.setPlayWhenReady(false);
-        position = player.getCurrentPosition();
-        release();
     }
 
     public void stop() {
@@ -105,9 +77,56 @@ public class PlayerHelp {
         }
     }
 
+    public void seekTo(long seek) {
+        if (player != null) {
+            long currentPosition = player.getCurrentPosition();
+            if ((currentPosition + seek) >= 0 && (currentPosition + seek) < player.getDuration()) {
+                player.seekTo(currentPosition + seek);
+            }
+        }
+    }
+
+    public void controll() {
+        if (player != null) {
+            player.setPlayWhenReady(!player.getPlayWhenReady());
+        }
+    }
+
+    private long currentPosition = 0;
+    private String url = "";
+
+    public void pause() {
+        player.setPlayWhenReady(false);
+        currentPosition = getCurrentPosition();
+    }
+
+    public void restart(CExoPlayerView playerView) {
+        if (player != null) {
+//            playerView.getPlayerView().setPlayer(player);
+//            playerView.createPlayerView();
+            player.prepare(buildMediaSource(url));
+            player.seekTo(currentPosition);
+            currentPosition = 0;
+        }
+    }
+
+    public long getDuration() {
+        if (player != null) {
+            return player.getDuration();
+        }
+        return 0;
+    }
+
+    public long getCurrentPosition() {
+        if (player != null) {
+            return player.getCurrentPosition();
+        }
+        return 0;
+    }
+
     public void release() {
         if (player != null) {
-            stop();
+            player.setPlayWhenReady(false);
             player.release();
         }
     }
@@ -123,12 +142,9 @@ public class PlayerHelp {
         if (mainHandler != null) {
             mainHandler = null;
         }
-        if (stateListener != null) {
-            stateListener = null;
-        }
     }
 
-    private void createPlayer(Context context) {
+    private void createPlayer() {
         // 创建带宽
         BandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
         // 创建轨道选择工厂
@@ -138,34 +154,9 @@ public class PlayerHelp {
         // 创建播放器实例
         player = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
 
-        player.addListener(new Player.DefaultEventListener() {
-            @Override
-            public void onLoadingChanged(boolean isLoading) {
-                super.onLoadingChanged(isLoading);
-                Log.e(TAG, "---onLoadingChanged---" + isLoading);
-            }
-
-            @Override
-            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-                super.onPlayerStateChanged(playWhenReady, playbackState);
-                Log.e(TAG, "---onPlayerStateChanged---" + "playWhenReady---" + playWhenReady + ",playbackState---" + playbackState);
-                if (stateListener != null) {
-                    stateListener.onPlayerStateChanged(playWhenReady, playbackState);
-                }
-            }
-
-            @Override
-            public void onPlayerError(ExoPlaybackException error) {
-                Log.e(TAG, "---onPlayerError---" + error.getClass());
-                super.onPlayerError(error);
-                if (stateListener != null) {
-                    stateListener.onError();
-                }
-            }
-        });
-
         dataSourceFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, getApplicationName(context)), null);
         mainHandler = new Handler(Looper.getMainLooper());
+
     }
 
     private MediaSource buildMediaSource(String url) {
@@ -176,9 +167,9 @@ public class PlayerHelp {
         DefaultHttpDataSourceFactory factory = new DefaultHttpDataSourceFactory(TAG, defaultBandwidthMeter);
         switch (type) {
             case C.TYPE_SS:
-                return new SsMediaSource(uri, dataSourceFactory, new DefaultSsChunkSource.Factory(new DefaultDataSourceFactory(MyApplication.getInstance(), defaultBandwidthMeter, factory)), mainHandler, null);
+                return new SsMediaSource(uri, dataSourceFactory, new DefaultSsChunkSource.Factory(new DefaultDataSourceFactory(context, defaultBandwidthMeter, factory)), mainHandler, null);
             case C.TYPE_DASH:
-                return new DashMediaSource(uri, dataSourceFactory, new DefaultDashChunkSource.Factory(new DefaultDataSourceFactory(MyApplication.getInstance(), defaultBandwidthMeter, factory)), mainHandler, null);
+                return new DashMediaSource(uri, dataSourceFactory, new DefaultDashChunkSource.Factory(new DefaultDataSourceFactory(context, defaultBandwidthMeter, factory)), mainHandler, null);
             case C.TYPE_HLS:
                 return new HlsMediaSource(uri, dataSourceFactory, mainHandler, null);
             case C.TYPE_OTHER:
@@ -215,7 +206,7 @@ public class PlayerHelp {
 
     public interface IPlayerStateListener {
 
-        void onPlayerStateChanged(boolean playWhenReady, int playbackState);
+        void onFinish();
 
         void onError();
 

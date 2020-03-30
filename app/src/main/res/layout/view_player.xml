@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.hxrainbow.myapplication.ExoPlayerView
+            android:id="@+id/player"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/rl_loading"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/iv_img"
+            android:layout_width="108px"
+            android:layout_height="72px"
+            android:layout_centerInParent="true"
+            android:scaleType="fitXY"
+            android:src="@mipmap/ic_loading" />
+
+        <ImageView
+            android:id="@+id/iv_loading"
+            android:layout_width="250px"
+            android:layout_height="250px"
+            android:layout_centerInParent="true"
+            android:scaleType="center"
+            android:src="@mipmap/ic_loading_circle" />
+
+        <TextView
+            android:id="@+id/tv_loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/iv_img"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:text="加载失败"
+            android:textColor="#ffffff"
+            android:textSize="20sp" />
+
+    </RelativeLayout>
+
+</RelativeLayout>

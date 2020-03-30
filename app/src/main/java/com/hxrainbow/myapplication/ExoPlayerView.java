@@ -195,17 +195,17 @@ public class ExoPlayerView extends FrameLayout implements View.OnLayoutChangeLis
 //                        playerView.setTransform(transform);
 //                    }
 //                }
-//                if (unappliedRotationDegrees == 90 || unappliedRotationDegrees == 270) {
-//                    videoAspectRatio = 1 / videoAspectRatio;
-//                }
-//                if (textureViewRotation != 0) {
-//                    playerView.removeOnLayoutChangeListener(ExoPlayerView.this);
-//                }
-//                textureViewRotation = unappliedRotationDegrees;
-//                if (textureViewRotation != 0) {
-//                    playerView.addOnLayoutChangeListener(ExoPlayerView.this);
-//                }
-//                applyTextureViewRotation(playerView, textureViewRotation);
+                if (unappliedRotationDegrees == 90 || unappliedRotationDegrees == 270) {
+                    videoAspectRatio = 1 / videoAspectRatio;
+                }
+                if (textureViewRotation != 0) {
+                    playerView.removeOnLayoutChangeListener(ExoPlayerView.this);
+                }
+                textureViewRotation = unappliedRotationDegrees;
+                if (textureViewRotation != 0) {
+                    playerView.addOnLayoutChangeListener(ExoPlayerView.this);
+                }
+                applyTextureViewRotation(playerView, textureViewRotation);
                 setAspectRatio(videoAspectRatio);
             }
 
@@ -252,6 +252,10 @@ public class ExoPlayerView extends FrameLayout implements View.OnLayoutChangeLis
             int oldRight,
             int oldBottom) {
         applyTextureViewRotation((TextureView) view, textureViewRotation);
+    }
+
+    public SimpleExoPlayer getPlayer(){
+        return player;
     }
 
 }
